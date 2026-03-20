@@ -349,6 +349,8 @@ window.saveJob = async () => {
   try {
     if (editingJobId) { await updateDoc(doc(db, 'jobs', editingJobId), jobData); }
     else { jobData.createdAt = new Date().toISOString(); await addDoc(collection(db, 'jobs'), jobData); }
+    const token = await currentUser.getIdToken();
+await syncToExtension(jobData, currentUser, token);
     closeModal(); loadJobs();
   } catch(e) { alert('Error: ' + e.message); }
 };
@@ -412,6 +414,22 @@ function draw() {
 }
 resize(); draw();
 window.addEventListener('resize', resize);
+async function syncToExtension(profile, user, token) {
+  try {
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+      await chrome.storage.local.set({
+        sassu_user: {
+          uid: user.uid,
+          name: user.displayName,
+          email: user.email,
+          photo: user.photoURL
+        },
+        sassu_token: token,
+        sassu_profile: profile
+      });
+    }
+  } catch(e) {}
+}
 </script>
 </body>
 </html>
