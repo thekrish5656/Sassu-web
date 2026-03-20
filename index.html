@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SASSU — Job Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;min-height:100vh;transition:all 0.4s}
+body.dark{background:#060a12;color:#e8eaf0}
+body.light{background:#f0f4fb;color:#1a1d2e}
+canvas#bg{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0}
+
+/* Auth */
+#auth-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;position:relative;z-index:10}
+.auth-logo{font-size:42px;font-weight:900;letter-spacing:5px;margin-bottom:6px}
+.dark .auth-logo{color:#00e5ff;text-shadow:0 0 30px rgba(0,229,255,0.6),0 0 80px rgba(0,229,255,0.2)}
+.light .auth-logo{background:linear-gradient(135deg,#0C447C,#00b8d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.auth-sub{font-size:13px;font-weight:400;letter-spacing:1px;margin-bottom:40px;opacity:0.4}
+.google-btn{display:flex;align-items:center;gap:12px;padding:13px 28px;border-radius:12px;border:none;cursor:pointer;font-family:'Inter',sans-serif;font-size:15px;font-weight:600;transition:all 0.2s}
+.dark .google-btn{background:rgba(255,255,255,0.07);color:#fff;border:0.5px solid rgba(255,255,255,0.1)}
+.light .google-btn{background:#fff;color:#1a1d2e;box-shadow:0 2px 20px rgba(0,0,0,0.1)}
+.google-btn:hover{transform:translateY(-2px)}
+.google-btn img{width:20px}
+
+/* Dashboard */
+#dashboard{display:none;position:relative;z-index:10}
+.navbar{display:flex;justify-content:space-between;align-items:center;padding:16px 28px;position:sticky;top:0;z-index:100;backdrop-filter:blur(16px)}
+.dark .navbar{background:rgba(6,10,18,0.85);border-bottom:0.5px solid rgba(0,229,255,0.08)}
+.light .navbar{background:rgba(240,244,251,0.88);border-bottom:0.5px solid rgba(0,0,0,0.07)}
+.nav-logo{font-size:20px;font-weight:900;letter-spacing:4px}
+.dark .nav-logo{color:#00e5ff;text-shadow:0 0 20px rgba(0,229,255,0.5)}
+.light .nav-logo{background:linear-gradient(135deg,#0C447C,#00b8d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-right{display:flex;align-items:center;gap:12px}
+.nav-right img{width:34px;height:34px;border-radius:50%;border:2px solid rgba(0,229,255,0.3)}
+.nav-name{font-size:13px;font-weight:500;opacity:0.7}
+.theme-btn{background:none;border:0.5px solid rgba(128,128,128,0.2);padding:6px 14px;border-radius:20px;cursor:pointer;font-family:'Inter',sans-serif;font-size:12px;font-weight:500;transition:all 0.2s}
+.dark .theme-btn{color:#aaa}
+.light .theme-btn{color:#666}
+.logout-btn{background:none;border:0.5px solid rgba(128,128,128,0.2);padding:6px 14px;border-radius:20px;cursor:pointer;font-family:'Inter',sans-serif;font-size:12px;color:#888;transition:all 0.2s}
+.logout-btn:hover{border-color:#ff6b6b;color:#ff6b6b}
+
+.main{max-width:1100px;margin:0 auto;padding:32px 28px}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:32px}
+.stat{border-radius:18px;padding:22px;text-align:center;transition:transform 0.25s,box-shadow 0.25s;cursor:default}
+.stat:hover{transform:translateY(-4px)}
+.dark .stat{background:rgba(255,255,255,0.03);border:0.5px solid rgba(0,229,255,0.08)}
+.light .stat{background:#fff;border:0.5px solid rgba(0,0,0,0.07);box-shadow:0 4px 20px rgba(0,0,0,0.06)}
+.stat-num{font-size:38px;font-weight:800;margin-bottom:6px;font-variant-numeric:tabular-nums}
+.stat-label{font-size:11px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;opacity:0.4}
+.n1{color:#00e5ff}.n2{color:#00ffcc}.n3{color:#00ff88}.n4{color:#ff6b6b}
+.dark .n1{text-shadow:0 0 20px rgba(0,229,255,0.7),0 0 50px rgba(0,229,255,0.25)}
+.dark .n2{text-shadow:0 0 20px rgba(0,255,204,0.7),0 0 50px rgba(0,255,204,0.25)}
+.dark .n3{text-shadow:0 0 20px rgba(0,255,136,0.7),0 0 50px rgba(0,255,136,0.25)}
+.dark .n4{text-shadow:0 0 20px rgba(255,107,107,0.7),0 0 50px rgba(255,107,107,0.25)}
+
+/* Section */
+.section-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.section-title{font-size:17px;font-weight:700}
+.add-btn{padding:10px 20px;border-radius:10px;border:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s}
+.dark .add-btn{background:#00e5ff;color:#060a12;box-shadow:0 0 20px rgba(0,229,255,0.35)}
+.light .add-btn{background:#185FA5;color:#fff;box-shadow:0 4px 14px rgba(24,95,165,0.3)}
+.add-btn:hover{transform:scale(1.04)}
+
+/* Filters */
+.filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.chip{padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;border:none;font-family:'Inter',sans-serif}
+.dark .chip{background:rgba(255,255,255,0.04);color:#666;border:0.5px solid rgba(255,255,255,0.06)}
+.light .chip{background:#fff;color:#888;border:0.5px solid rgba(0,0,0,0.1)}
+.dark .chip.active{background:rgba(0,229,255,0.1);color:#00e5ff;border-color:rgba(0,229,255,0.3);box-shadow:0 0 12px rgba(0,229,255,0.12)}
+.light .chip.active{background:rgba(24,95,165,0.1);color:#185FA5;border-color:rgba(24,95,165,0.3)}
+
+/* Table */
+.jobs-table{border-radius:18px;overflow:hidden}
+.dark .jobs-table{background:rgba(255,255,255,0.02);border:0.5px solid rgba(0,229,255,0.07)}
+.light .jobs-table{background:#fff;border:0.5px solid rgba(0,0,0,0.07);box-shadow:0 4px 20px rgba(0,0,0,0.05)}
+.table-header{display:grid;grid-template-columns:2fr 2fr 1.5fr 1.5fr 1fr 1fr;padding:13px 22px;font-size:11px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;opacity:0.35}
+.job-row{display:grid;grid-template-columns:2fr 2fr 1.5fr 1.5fr 1fr 1fr;padding:15px 22px;align-items:center;border-top:0.5px solid rgba(128,128,128,0.07);transition:background 0.15s}
+.dark .job-row:hover{background:rgba(0,229,255,0.025)}
+.light .job-row:hover{background:rgba(24,95,165,0.025)}
+.company-name{font-weight:700;font-size:14px}
+.role-name{font-size:12px;opacity:0.45;margin-top:2px}
+.status-badge{display:inline-block;padding:4px 11px;border-radius:20px;font-size:11px;font-weight:700}
+.status-Applied{background:rgba(0,229,255,0.1);color:#00e5ff}
+.status-Interview{background:rgba(0,255,204,0.1);color:#00ffcc}
+.status-Offer{background:rgba(0,255,136,0.1);color:#00ff88}
+.status-Rejected{background:rgba(255,107,107,0.1);color:#ff6b6b}
+.status-Pending{background:rgba(255,215,0,0.1);color:#ffd700}
+.date-text{font-size:13px;opacity:0.4}
+.action-btns{display:flex;gap:6px}
+.edit-btn,.delete-btn{border:none;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;font-family:'Inter',sans-serif;transition:all 0.2s}
+.dark .edit-btn{background:rgba(255,255,255,0.06);color:#aaa}
+.light .edit-btn{background:rgba(0,0,0,0.06);color:#666}
+.edit-btn:hover{color:#00e5ff}
+.dark .delete-btn{background:rgba(255,107,107,0.08);color:#ff6b6b}
+.light .delete-btn{background:rgba(255,107,107,0.08);color:#cc4444}
+.empty-state{text-align:center;padding:60px;opacity:0.4}
+.empty-icon{font-size:40px;margin-bottom:12px}
+
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.open{display:flex}
+.modal{border-radius:20px;padding:28px;width:500px;max-width:95vw}
+.dark .modal{background:#0d1320;border:0.5px solid rgba(0,229,255,0.12)}
+.light .modal{background:#fff;border:0.5px solid rgba(0,0,0,0.1);box-shadow:0 20px 60px rgba(0,0,0,0.15)}
+.modal h3{font-size:17px;font-weight:700;margin-bottom:20px}
+.form-group{margin-bottom:14px}
+.form-group label{font-size:12px;font-weight:600;letter-spacing:0.3px;opacity:0.5;display:block;margin-bottom:6px;text-transform:uppercase}
+.form-group input,.form-group select{width:100%;padding:10px 14px;border-radius:10px;font-family:'Inter',sans-serif;font-size:14px;transition:border 0.2s;outline:none}
+.dark .form-group input,.dark .form-group select{background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.1);color:#e8eaf0}
+.light .form-group input,.light .form-group select{background:#f8fafc;border:0.5px solid rgba(0,0,0,0.1);color:#1a1d2e}
+.dark .form-group input:focus,.dark .form-group select:focus{border-color:rgba(0,229,255,0.4)}
+.light .form-group input:focus,.light .form-group select:focus{border-color:rgba(24,95,165,0.4)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-btns{display:flex;gap:10px;margin-top:20px}
+.modal-btns button{flex:1;padding:11px;border-radius:10px;border:none;font-family:'Inter',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s}
+.btn-save{background:#00e5ff;color:#060a12}
+.dark .btn-cancel{background:rgba(255,255,255,0.06);color:#aaa}
+.light .btn-cancel{background:rgba(0,0,0,0.06);color:#666}
+</style>
+</head>
+<body class="dark">
+<canvas id="bg"></canvas>
+
+<!-- Auth -->
+<div id="auth-screen">
+  <div class="auth-logo">SASSU</div>
+  <div class="auth-sub">Track every job application</div>
+  <button class="google-btn" onclick="signInWithGoogle()">
+    <img src="https://www.google.com/favicon.ico" alt="G">
+    Continue with Google
+  </button>
+</div>
+
+<!-- Dashboard -->
+<div id="dashboard">
+  <nav class="navbar">
+    <div class="nav-logo">SASSU</div>
+    <div class="nav-right">
+      <img id="user-photo" src="" alt="">
+      <span class="nav-name" id="user-name"></span>
+      <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">☀️ Light</button>
+      <button class="logout-btn" onclick="doSignOut()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="main">
+    <div class="stats">
+      <div class="stat"><div class="stat-num n1" id="total-count">0</div><div class="stat-label">Total Applied</div></div>
+      <div class="stat"><div class="stat-num n2" id="interview-count">0</div><div class="stat-label">Interviews</div></div>
+      <div class="stat"><div class="stat-num n3" id="offer-count">0</div><div class="stat-label">Offers</div></div>
+      <div class="stat"><div class="stat-num n4" id="rejected-count">0</div><div class="stat-label">Rejected</div></div>
+    </div>
+
+    <div class="section-bar">
+      <div class="section-title">My Applications</div>
+      <button class="add-btn" onclick="openModal()">+ Add Job</button>
+    </div>
+
+    <div class="filters">
+      <button class="chip active" onclick="filterJobs('All',this)">All</button>
+      <button class="chip" onclick="filterJobs('Applied',this)">Applied</button>
+      <button class="chip" onclick="filterJobs('Interview',this)">Interview</button>
+      <button class="chip" onclick="filterJobs('Offer',this)">Offer</button>
+      <button class="chip" onclick="filterJobs('Rejected',this)">Rejected</button>
+      <button class="chip" onclick="filterJobs('Pending',this)">Pending</button>
+    </div>
+
+    <div class="jobs-table">
+      <div class="table-header">
+        <div>Company</div><div>Role</div><div>Status</div><div>Portal</div><div>Date</div><div>Actions</div>
+      </div>
+      <div id="jobs-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3 id="modal-title">Add New Application</h3>
+    <div class="form-row">
+      <div class="form-group"><label>Company *</label><input type="text" id="company" placeholder="Google, TCS..."></div>
+      <div class="form-group"><label>Role *</label><input type="text" id="role" placeholder="Software Engineer"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Status</label>
+        <select id="status">
+          <option value="Applied">Applied</option>
+          <option value="Pending">Pending</option>
+          <option value="Interview">Interview</option>
+          <option value="Offer">Offer</option>
+          <option value="Rejected">Rejected</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Portal</label>
+        <select id="portal">
+          <option value="LinkedIn">LinkedIn</option>
+          <option value="Naukri">Naukri</option>
+          <option value="Internshala">Internshala</option>
+          <option value="Indeed">Indeed</option>
+          <option value="Company Website">Company Website</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Applied Date</label><input type="date" id="applied-date"></div>
+      <div class="form-group"><label>HR Contact</label><input type="text" id="hr-contact" placeholder="HR email/phone"></div>
+    </div>
+    <div class="form-group"><label>Notes</label><input type="text" id="notes" placeholder="Any notes..."></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveJob()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as fbSignOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDrV-abZYfip5zO5CyR7zMLKxWpD5Kz1Bw",
+  authDomain: "sassu-f5750.firebaseapp.com",
+  projectId: "sassu-f5750",
+  storageBucket: "sassu-f5750.firebasestorage.app",
+  messagingSenderId: "437595854895",
+  appId: "1:437595854895:web:db7e1d3127c6e5632eceda"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+let currentUser = null;
+let allJobs = [];
+let editingJobId = null;
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    currentUser = user;
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    document.getElementById('user-name').textContent = user.displayName;
+    document.getElementById('user-photo').src = user.photoURL;
+    loadJobs();
+  } else {
+    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('dashboard').style.display = 'none';
+  }
+});
+
+window.signInWithGoogle = async () => {
+  try { await signInWithPopup(auth, provider); }
+  catch(e) { alert('Login failed: ' + e.message); }
+};
+
+window.doSignOut = async () => { await fbSignOut(auth); };
+
+async function loadJobs() {
+  const q = query(collection(db, 'jobs'), where('userId', '==', currentUser.uid));
+  const snap = await getDocs(q);
+  allJobs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  allJobs.sort((a, b) => new Date(b.appliedDate) - new Date(a.appliedDate));
+  renderJobs(allJobs);
+  updateStats();
+}
+
+function countUp(id, target) {
+  const el = document.getElementById(id);
+  let start = 0;
+  const step = target / 30;
+  const timer = setInterval(() => {
+    start += step;
+    if (start >= target) { start = target; clearInterval(timer); }
+    el.textContent = Math.round(start);
+  }, 16);
+}
+
+function updateStats() {
+  countUp('total-count', allJobs.length);
+  countUp('interview-count', allJobs.filter(j => j.status === 'Interview').length);
+  countUp('offer-count', allJobs.filter(j => j.status === 'Offer').length);
+  countUp('rejected-count', allJobs.filter(j => j.status === 'Rejected').length);
+}
+
+function renderJobs(jobs) {
+  const list = document.getElementById('jobs-list');
+  if (jobs.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><p>No applications yet!</p><p style="margin-top:6px;font-size:13px">Click "+ Add Job" to start tracking</p></div>`;
+    return;
+  }
+  list.innerHTML = jobs.map(job => `
+    <div class="job-row">
+     <div><div class="company-name">${job.company}</div></div>
+     <div class="date-text">${job.role}</div>
+     <div><span class="status-badge status-${job.status}">${job.status}</span></div>
+     <div class="date-text">${job.portal || '-'}</div>
+     <div class="date-text">${job.appliedDate || '-'}</div>
+     <div class="action-btns">
+    <button class="edit-btn" onclick="editJob('${job.id}')">Edit</button>
+    <button class="delete-btn" onclick="deleteJob('${job.id}')">Del</button>
+  </div>
+</div>
+    </div>
+  `).join('');
+}
+
+window.filterJobs = (filter, btn) => {
+  document.querySelectorAll('.chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderJobs(filter === 'All' ? allJobs : allJobs.filter(j => j.status === filter));
+};
+
+window.openModal = () => {
+  editingJobId = null;
+  document.getElementById('modal-title').textContent = 'Add New Application';
+  document.getElementById('company').value = '';
+  document.getElementById('role').value = '';
+  document.getElementById('status').value = 'Applied';
+  document.getElementById('portal').value = 'LinkedIn';
+  document.getElementById('applied-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('hr-contact').value = '';
+  document.getElementById('notes').value = '';
+  document.getElementById('modal').classList.add('open');
+};
+
+window.closeModal = () => document.getElementById('modal').classList.remove('open');
+
+window.saveJob = async () => {
+  const company = document.getElementById('company').value.trim();
+  const role = document.getElementById('role').value.trim();
+  if (!company || !role) { alert('Company and Role required!'); return; }
+  const jobData = {
+    userId: currentUser.uid, company, role,
+    status: document.getElementById('status').value,
+    portal: document.getElementById('portal').value,
+    appliedDate: document.getElementById('applied-date').value,
+    hrContact: document.getElementById('hr-contact').value,
+    notes: document.getElementById('notes').value,
+    updatedAt: new Date().toISOString()
+  };
+  try {
+    if (editingJobId) { await updateDoc(doc(db, 'jobs', editingJobId), jobData); }
+    else { jobData.createdAt = new Date().toISOString(); await addDoc(collection(db, 'jobs'), jobData); }
+    closeModal(); loadJobs();
+  } catch(e) { alert('Error: ' + e.message); }
+};
+
+window.editJob = (id) => {
+  const job = allJobs.find(j => j.id === id);
+  if (!job) return;
+  editingJobId = id;
+  document.getElementById('modal-title').textContent = 'Edit Application';
+  document.getElementById('company').value = job.company;
+  document.getElementById('role').value = job.role;
+  document.getElementById('status').value = job.status;
+  document.getElementById('portal').value = job.portal || 'LinkedIn';
+  document.getElementById('applied-date').value = job.appliedDate || '';
+  document.getElementById('hr-contact').value = job.hrContact || '';
+  document.getElementById('notes').value = job.notes || '';
+  document.getElementById('modal').classList.add('open');
+};
+
+window.deleteJob = async (id) => {
+  if (!confirm('Delete this application?')) return;
+  await deleteDoc(doc(db, 'jobs', id));
+  loadJobs();
+};
+</script>
+
+<script>
+let dark = true;
+window.toggleTheme = () => {
+  dark = !dark;
+  document.body.className = dark ? 'dark' : 'light';
+  document.getElementById('theme-btn').textContent = dark ? '☀️ Light' : '🌙 Dark';
+};
+
+const canvas = document.getElementById('bg');
+const ctx = canvas.getContext('2d');
+let lines = [], W, H;
+function resize() {
+  W = canvas.offsetWidth; H = canvas.offsetHeight;
+  canvas.width = W; canvas.height = H;
+  lines = Array.from({length: 15}, () => ({
+    x: Math.random()*W, y: Math.random()*H,
+    vx: (Math.random()-0.5)*0.35, vy: (Math.random()-0.5)*0.35,
+    len: 60+Math.random()*120, op: 0.025+Math.random()*0.05
+  }));
+}
+function draw() {
+  ctx.clearRect(0,0,W,H);
+  const t = Date.now()*0.0003;
+  lines.forEach(l => {
+    l.x += l.vx; l.y += l.vy;
+    if(l.x<-200||l.x>W+200) l.vx*=-1;
+    if(l.y<-200||l.y>H+200) l.vy*=-1;
+    const color = dark ? `rgba(0,229,255,${l.op})` : `rgba(24,95,165,${l.op*0.6})`;
+    ctx.beginPath();
+    ctx.moveTo(l.x, l.y);
+    ctx.lineTo(l.x+l.len*Math.cos(t+l.x*0.01), l.y+l.len*Math.sin(t+l.y*0.01));
+    ctx.strokeStyle = color; ctx.lineWidth = 1; ctx.stroke();
+  });
+  requestAnimationFrame(draw);
+}
+resize(); draw();
+window.addEventListener('resize', resize);
+</script>
+</body>
+</html>
